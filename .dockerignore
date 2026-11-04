@@ -1,0 +1,3 @@
+# The image only needs the pinned requirements; the code is mounted at run time.
+*
+!docker/requirements-docker.txt

@@ -1,0 +1,25 @@
+# Recommended: use the Docker image instead (docker/, docs/INSTALL.md), which pins known-good
+# versions in docker/requirements-docker.txt. This file is for a manual install without Docker:
+# install PyTorch + torchvision for your CUDA version first (tested: torch 1.13.1 / CUDA 11.6),
+# see https://pytorch.org/get-started/locally/
+
+# training / inference
+numpy
+scipy
+Pillow
+opencv-python
+click
+requests
+psutil
+timm
+tensorboard
+ninja            # builds the custom CUDA ops in torch_utils/ops (falls back to slower reference ops)
+
+# evaluation
+openpyxl         # Excel export
+lpips            # optional: LPIPS metric
+
+# optional
+pyspng           # faster PNG loading
+tqdm             # tools/crop_by_density.py
+# fvcore / thop / ptflops   for tools/report_complexity.py (any one)

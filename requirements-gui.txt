@@ -1,0 +1,7 @@
+# Host side only: the GUIs and the data tools (no PyTorch, no GPU needed).
+# The training / evaluation / inference servers run in the Docker container (docker/).
+# tkinter comes from the system:  sudo apt install python3-tk python3-venv
+numpy
+Pillow
+opencv-python    # tools/annotate_face_boxes.py, tools/crop_by_density.py, tools/export_face_masks.py
+tqdm             # tools/crop_by_density.py
