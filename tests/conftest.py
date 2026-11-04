@@ -21,6 +21,7 @@ RES = 512
 MODELS = {   # name -> (generator class, extra G kwargs)
     'ours': ('networks.new_mat.GeneratorSketch', {}),
     'edgeconnect': ('networks.baselines.edgeconnect.EdgeConnectEdgeGenerator', {}),
+    'sgtb_srn': ('networks.baselines.sgtb_srn.SGTBStructureGenerator', {}),
     'zits_tsr': ('networks.baselines.zits_tsr.ZITSTSREdge', {}),
 }
 

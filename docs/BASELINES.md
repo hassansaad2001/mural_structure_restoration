@@ -1,12 +1,13 @@
-# Baselines: EdgeConnect and ZITS TSR
+# Baselines: EdgeConnect, SGTB SRN and ZITS TSR
 
-Two published structure-restoration models are re-trained **inside this framework**.
+Three published structure-restoration models are re-trained **inside this framework**.
 All models therefore use the same 512×512 mural crops, masks, mask augmentation, face/hand holes,
 fixed validation bank, metrics, evaluation GUI and `generate_edges.py`.
 Only the model and its training recipe change. `--preset` selects them:
 
 ```bash
 DATA_ROOT=/path/to/dataset bash scripts/train_edgeconnect.sh
+DATA_ROOT=/path/to/dataset bash scripts/train_sgtb_srn.sh
 DATA_ROOT=/path/to/dataset bash scripts/train_zits_tsr.sh
 python train_tsr.py --preset zits_tsr ... --dry-run      # print the resolved options
 ```
@@ -27,8 +28,8 @@ The dataset's edge maps are soft JPEG maps:
 | (0.1, 0.9), soft stroke borders | 8 % |
 | ≥ 0.9 | 5 % |
 
-EdgeConnect and ZITS were designed for binary Canny edges. Both baselines therefore binarise the edge map at
-**0.5** (`edge > 0.5`, the same rule the metrics use to define a ground-truth edge) before anything else. This applies to their edge input, to the real edges EdgeConnect's discriminator sees, and to ZITS's training targets.
+EdgeConnect, SGTB and ZITS were designed for binary Canny edges. All three baselines therefore binarise the edge map at
+**0.5** (`edge > 0.5`, the same rule the metrics use to define a ground-truth edge) before anything else. This applies to their edge input, to the real edges the EdgeConnect discriminator sees (used by EdgeConnect and SGTB), and to ZITS's training targets.
 The data pipeline, the evaluation code and our own model are unchanged: our model keeps training on the soft maps, as in all earlier runs.
 The behaviour is set by the `binarize_edges` argument of the generator (and of `EdgeConnectLoss`). Setting it to `None` keeps the edges soft.
 
@@ -56,6 +57,41 @@ Preset: `--generator ...EdgeConnectEdgeGenerator --discriminator edgeconnect --l
 - Trained at 512×512 (the original used 256). The network is fully convolutional, so the architecture is unchanged.
 - Edges are the dataset's edge maps, binarised at 0.5, instead of Canny (σ = 2) edges, so all models learn the same structures.
 - Original weights load into `.net` (`EdgeConnectEdgeGenerator.load_official('EdgeModel_gen.pth')`), for example to report a zero-shot row.
+
+---
+
+## SGTB – structure reconstruction network (stage 1)
+
+Deng & Yu, *Ancient mural inpainting via structure information guided two-branch model*, Heritage Science 11:131, 2023.
+https://doi.org/10.1186/s40494-023-00972-x. No code has been released, so the network is **re-implemented from the paper**.
+Only the structure stage (SRN, generator G_s) is trained; the content restoration network is not part of this comparison.
+
+| | |
+|---|---|
+| Generator | `networks.baselines.sgtb_srn.SGTBStructureGenerator`. Encoder: gated convolutions 7×7 (stride 1, 64 ch), 5×5 (stride 2, 128 ch), 3×3 (stride 2, 256 ch), each + InstanceNorm + ReLU. Middle: 8 FFC residual blocks (LaMa `FFCResnetBlock`, 256 ch). Decoder: ×2 up-sampling + gated conv to 128 ch, ×2 up-sampling + gated conv to 64 ch (+ InstanceNorm + ReLU), gated conv 7×7 to 1 channel |
+| Generator input | `cat(m, gray·(1−m), edge·(1−m))`, gray in [0, 1] (paper: M, gray_masked, S_masked) |
+| Discriminator | `EdgeConnectDiscriminator`: the paper's Table 1 is EdgeConnect's 70×70 PatchGAN (4×4 convs 64-128-256 stride 2, 512 and 1 stride 1) |
+| G loss | λ_s_adv · adversarial + λ_FM · feature matching with λ_s_adv = 1, λ_FM = 10 (paper Eq. 9–10), i.e. `EdgeConnectLoss`; no reconstruction loss |
+| D loss | as EdgeConnect: (BCE(real) + BCE(fake)) / 2, no R1 |
+| Optimiser | Adam, G lr 1e-4, D lr 1e-5, betas (0.5, 0.9), constant learning rate |
+| Batch | 4 (the paper used 2 GPUs; `scripts/train_sgtb_srn.sh` uses `--gpus=2 --batch-gpu=2`) |
+
+Preset: `--generator ...SGTBStructureGenerator --discriminator edgeconnect --loss losses.loss_baselines.EdgeConnectLoss --lr 1e-4 --lr-d 1e-5 --g-beta1 0.5 --d-beta1 0.5 --g-beta2 0.9 --d-beta2 0.9 --gamma 0 --adv-weight 1 --fm-weight 10 --batch 4 --lr-min-ratio 1`
+
+**Choices the paper leaves open** (taken from the EdgeConnect/LaMa code the model is built on)
+
+- Spatial sizes follow Fig. 1b: the 7×7 encoder layer keeps the resolution, the 5×5 and 3×3 layers halve it, so the FFC blocks run at 1/4 resolution, as in EdgeConnect.
+- Decoder: the paper only says "three up-sampling gated convolutions". Fig. 1b shows 1/4 → 1/2 → full → output, so two layers up-sample (nearest ×2, then gated conv, DeepFill v2 style) and the last one maps to 1 channel. Kernel sizes mirror the encoder (3, 5, 7).
+- Gated convolution: `feature · sigmoid(gate)` from one convolution, followed by InstanceNorm + ReLU as the paper states; reflection padding.
+- FFC: 3/4 of the 256 channels are global (LaMa default), no local Fourier unit (Fig. 2 shows none; also LaMa's big-lama setting), BatchNorm + ReLU inside the blocks (Fig. 2).
+- Spectral normalisation in the discriminator, as in EdgeConnect; none in the generator.
+- Weight initialisation N(0, 0.02) as in EdgeConnect.
+- Eq. 1 of the paper lists `I_gt` as an input of G_s; the text and Fig. 1a say the damaged grayscale mural. The damaged grayscale mural is used.
+
+**Deviations from the original**
+
+- Trained at 512×512 (the paper used 256). The network is fully convolutional and the FFC global branch works at any size.
+- Edges are the dataset's edge maps, binarised at 0.5, instead of Canny edges.
 
 ---
 
@@ -91,7 +127,7 @@ Preset: `--generator ...ZITSTSREdge --no-discriminator --loss losses.loss_baseli
 
 ## Fairness notes for the comparison
 
-- All models are evaluated with the EMA copy of the generator (`G_ema`), as in this framework. Neither original code base keeps an EMA.
+- All models are evaluated with the EMA copy of the generator (`G_ema`), as in this framework. None of the original methods keeps an EMA.
 - Train for the same number of images (`--kimg`) and compare checkpoints from the same point in training.
 - The training/validation split, masks, metrics and evaluation code are identical for all models.
 - The baselines see binarised edges and our model sees soft edges (see "Edge maps" above). The evaluation scores every model against the same ground truth, edge > 0.5.

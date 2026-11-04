@@ -25,8 +25,9 @@ Modifications © 2026 Hassan Saad.
 | `networks/diffaug.py` | DiffAugment, Zhao et al. (NeurIPS 2020), https://github.com/mit-han-lab/data-efficient-gans (BSD 2-Clause) | reused |
 | `evaluation/`, `inference/`, `tools/`, `generate_edges.py` | new | written for this project |
 | `networks/baselines/edgeconnect.py` | EdgeConnect, Nazeri et al. (ICCVW 2019), https://github.com/knazeri/edge-connect (CC BY-NC 4.0) | network classes copied unchanged; wrappers new |
+| `networks/baselines/sgtb_srn.py` | SGTB structure reconstruction network, Deng & Yu (Heritage Science 2023, article CC BY 4.0); FFC classes after LaMa (Apache-2.0); gated convolution after DeepFill v2 | re-implemented from the paper (no official code) |
 | `networks/baselines/zits_tsr.py` | ZITS, Dong et al. (CVPR 2022), https://github.com/DQiaole/ZITS_inpainting (Apache-2.0) | TSR / SSU classes copied (only `configure_optimizers` removed); wrapper and edge-only sampling new |
-| `losses/loss_baselines.py` | re-implements the EdgeConnect and ZITS TSR training losses | written for this project |
+| `losses/loss_baselines.py` | re-implements the EdgeConnect (also used by SGTB) and ZITS TSR training losses | written for this project |
 
 ## Ideas and building blocks from other work (re-implemented in `networks/new_mat.py`)
 

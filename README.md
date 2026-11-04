@@ -104,10 +104,11 @@ Runs are written to `outputs/tsr/<NNNNN>-<description>/` and include `training_o
 
 ### Baselines
 
-EdgeConnect (edge stage) and ZITS TSR (edge only) are re-trained in the same framework with `--preset`, on the same data, masks and metrics:
+EdgeConnect (edge stage), the SGTB structure reconstruction network (Deng & Yu 2023, re-implemented from the paper) and ZITS TSR (edge only) are re-trained in the same framework with `--preset`, on the same data, masks and metrics:
 
 ```bash
 DATA_ROOT=/path/to/dataset bash scripts/train_edgeconnect.sh
+DATA_ROOT=/path/to/dataset bash scripts/train_sgtb_srn.sh
 DATA_ROOT=/path/to/dataset bash scripts/train_zits_tsr.sh
 ```
 

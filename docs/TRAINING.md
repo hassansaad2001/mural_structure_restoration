@@ -28,7 +28,7 @@ All commands are run from the repository root. `train_tsr.py --help` lists every
 | Discriminator | `--discriminator {sketch,lama,projected,edgeconnect}`, `--no-discriminator`, `--d-norm`, `--d-layers`, `--d-mask-input`, `--d-blur`, `--d-fake-mode` |
 | Loss | `--loss-mode {bce,bce_dice,bce_dice_hd}`, `--bce-weight`, `--dice-weight`, `--hd-weight`, `--adv-weight`, `--fm-weight`, `--bce-pos-weight`, `--focal`, `--rec-tau`, `--gamma` (R1) |
 | Optimiser | `--optimizer {adam,adamw}`, `--lr`, `--lr-d`, `--g-beta1`, `--d-beta1`, `--g-beta2`, `--d-beta2`, `--weight-decay`, `--grad-clip`, `--lr-warmup`, `--lr-decay-start`, `--lr-min-ratio`, `--min-lr`, `--min-lr-d`, `--ema` |
-| Baselines | `--preset {ours,edgeconnect,zits_tsr}`, see [BASELINES.md](BASELINES.md) |
+| Baselines | `--preset {ours,edgeconnect,sgtb_srn,zits_tsr}`, see [BASELINES.md](BASELINES.md) |
 | Run | `--outdir`, `--gpus`, `--batch`, `--batch-gpu`, `--workers`, `--kimg`, `--snap`, `--seed`, `--resume-ckpt`, `--allow-tf32`, `-n/--dry-run` |
 
 See [`scripts/train_example.sh`](../scripts/train_example.sh) for the configuration of the final model.

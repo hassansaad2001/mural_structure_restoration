@@ -114,7 +114,7 @@ def setup_training_loop_kwargs(
     weight_decay = None,    # optimizer weight decay
     grad_clip = None,       # max gradient norm (None = off)
     lr_warmup = None,       # linear LR warm-up length in kimg (None/0 = off)
-    preset = None,          # 'ours' | 'edgeconnect' | 'zits_tsr' (only used for the run name)
+    preset = None,          # 'ours' | 'edgeconnect' | 'sgtb_srn' | 'zits_tsr' (only used for the run name)
     sync_bn = None,         # SyncBatchNorm for multi-GPU
 
     # Transfer learning
@@ -645,6 +645,16 @@ PRESETS = {
         loss='losses.loss_baselines.EdgeConnectLoss',
         lr=1e-4, lr_d=1e-5, g_beta1=0.0, d_beta1=0.0, g_beta2=0.9, d_beta2=0.9,
         gamma=0.0, adv_weight=1.0, fm_weight=10.0, batch=8, lr_min_ratio=1.0,
+    ),
+    # SGTB structure reconstruction network (Deng & Yu, Heritage Science 2023), "Training settings"
+    # and "Loss function": Adam lr 1e-4 (G) / 1e-5 (D), betas (0.5, 0.9), batch 4,
+    # lambda_s_adv 1, lambda_FM 10; EdgeConnect's 70x70 PatchGAN (paper Table 1). No schedule given.
+    'sgtb_srn': dict(
+        generator='networks.baselines.sgtb_srn.SGTBStructureGenerator',
+        discriminator='edgeconnect', use_discriminator=True,
+        loss='losses.loss_baselines.EdgeConnectLoss',
+        lr=1e-4, lr_d=1e-5, g_beta1=0.5, d_beta1=0.5, g_beta2=0.9, d_beta2=0.9,
+        gamma=0.0, adv_weight=1.0, fm_weight=10.0, batch=4, lr_min_ratio=1.0,
     ),
     # ZITS TSR (Dong et al. 2022), TSR_train.py / TSR_trainer.py defaults:
     # AdamW lr 4.24e-4, betas (0.9, 0.95), weight decay 0, batch 32, grad-norm clip 1.0,

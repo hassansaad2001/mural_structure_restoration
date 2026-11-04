@@ -33,7 +33,7 @@ def test_binarize_matches_metric_rule(data_root):
     assert torch.equal(binarize_edge(edge, None), edge)
 
 
-@pytest.mark.parametrize('name', ['ours', 'edgeconnect', 'zits_tsr'])
+@pytest.mark.parametrize('name', ['ours', 'edgeconnect', 'sgtb_srn', 'zits_tsr'])
 def test_generator_forward(data_root, name):
     img, edge, mask = _batch(data_root)
     G = make_generator(name)
@@ -73,6 +73,28 @@ def test_loss_edgeconnect(data_root):
     G = make_generator('edgeconnect').train()
     D = EdgeConnectDiscriminator(RES).train()
     _step(EdgeConnectLoss(torch.device('cpu'), G, D), [('Gmain', G), ('Dmain', D), ('Dreg', D)], [G, D], data_root)
+
+
+def test_loss_sgtb_srn(data_root):
+    from networks.baselines.edgeconnect import EdgeConnectDiscriminator
+    from losses.loss_baselines import EdgeConnectLoss
+    G = make_generator('sgtb_srn').train()
+    D = EdgeConnectDiscriminator(RES).train()
+    _step(EdgeConnectLoss(torch.device('cpu'), G, D), [('Gmain', G), ('Dmain', D), ('Dreg', D)], [G, D], data_root)
+
+
+def test_sgtb_srn_architecture():
+    """Paper: 3 gated-conv encoder layers (7x7, 5x5, 3x3), 8 FFC residual blocks, 3 gated-conv decoder layers."""
+    from networks.baselines.sgtb_srn import FFCResnetBlock, GatedConv2d
+    net = make_generator('sgtb_srn').net
+    enc = [m for m in net.encoder.modules() if isinstance(m, GatedConv2d)]
+    dec = [m for m in net.decoder.modules() if isinstance(m, GatedConv2d)]
+    assert [m.conv.kernel_size[0] for m in enc] == [7, 5, 3] and [m.conv.stride[0] for m in enc] == [1, 2, 2]
+    assert [m.conv.out_channels // 2 for m in enc] == [64, 128, 256]
+    assert [m.conv.out_channels // 2 for m in dec] == [128, 64, 1]
+    assert sum(isinstance(m, FFCResnetBlock) for m in net.middle) == 8
+    x = torch.zeros(1, 3, 64, 64)
+    assert net.encoder(x).shape == (1, 256, 16, 16) and net(x).shape == (1, 1, 64, 64)
 
 
 def test_loss_zits(data_root):

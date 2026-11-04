@@ -143,7 +143,7 @@ All commands in this section run **inside the container**, from the repository f
 | Task | Command |
 |---|---|
 | Train the final model | `bash scripts/train_example.sh` |
-| Train the baselines | `bash scripts/train_edgeconnect.sh`, `bash scripts/train_zits_tsr.sh` |
+| Train the baselines | `bash scripts/train_edgeconnect.sh`, `bash scripts/train_sgtb_srn.sh`, `bash scripts/train_zits_tsr.sh` |
 | All training options | `python3 train_tsr.py --help` (see [TRAINING.md](TRAINING.md), [BASELINES.md](BASELINES.md)) |
 | Predict a test folder | `bash scripts/test_example.sh <ckpt> <images> <edges> <masks> <out>` |
 | Headless evaluation | `python3 evaluation/eval_server.py --headless --settings eval_settings.json` |

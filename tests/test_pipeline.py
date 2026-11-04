@@ -23,7 +23,7 @@ def _run(args, timeout=600):
     return r.stdout
 
 
-@pytest.mark.parametrize('name', ['ours', 'edgeconnect', 'zits_tsr'])
+@pytest.mark.parametrize('name', ['ours', 'edgeconnect', 'sgtb_srn', 'zits_tsr'])
 def test_checkpoint_loads_with_all_weights(checkpoints, name):
     import torch
     from evaluation.eval_core import resolve_network
@@ -44,7 +44,7 @@ def test_generate_edges(data_root, checkpoints, tmp_path, name):
         assert len(os.listdir(out / sub)) == 3
 
 
-@pytest.mark.parametrize('preset', ['ours', 'edgeconnect', 'zits_tsr'])
+@pytest.mark.parametrize('preset', ['ours', 'edgeconnect', 'sgtb_srn', 'zits_tsr'])
 def test_train_dry_run(data_root, tmp_path, preset):
     stdout = _run(['train_tsr.py', '--dry-run', '--preset', preset, '--gpus', '1', '--outdir', str(tmp_path),
                    '--data-edge', str(data_root / 'train' / 'edges'), '--data-image', str(data_root / 'train' / 'images'),
@@ -53,6 +53,7 @@ def test_train_dry_run(data_root, tmp_path, preset):
     opts = json.loads(stdout[stdout.index('{'): stdout.rindex('}') + 1])
     expected = {'ours': 'networks.new_mat.GeneratorSketch',
                 'edgeconnect': 'networks.baselines.edgeconnect.EdgeConnectEdgeGenerator',
+                'sgtb_srn': 'networks.baselines.sgtb_srn.SGTBStructureGenerator',
                 'zits_tsr': 'networks.baselines.zits_tsr.ZITSTSREdge'}[preset]
     assert opts['G_kwargs']['class_name'] == expected
 
